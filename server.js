@@ -3,7 +3,7 @@ const path = require('path');
 const http = require("http");
 const socketio = require("socket.io")
 const formatMessage = require("./utils/messages")
-const {userJoin, getCurrentUser} = require('./utils/users');
+const {userJoin, getCurrentUser, userLeave, getRoomUsers} = require('./utils/users');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,7 +20,7 @@ io.on('connection', socket => {
     socket.on('joinRoom',({username,room})=>{
         const user = userJoin(socket.id, username, room);
 
-        socket.join(user.name);
+        socket.join(user.room);
 
         //Only displays the user who is connected, Runs when user connects
         socket.emit('message',formatMessage(yourBud, 'Welcome\'s you to ChatCord! 🙌'));
@@ -31,15 +31,20 @@ io.on('connection', socket => {
     
     //Runs when user disconnects
     socket.on('disconnect',()=>{
-        //Shown to everyone including the user
-        io.emit('message', formatMessage(yourBud, 'A user has left the chat ❤️'))
+        const user = userLeave(socket.id);
+
+        if(user){
+            //Shown to everyone including the user
+            io.to(user.room).emit('message', formatMessage(yourBud, `${user.username} has left the chat ❤️`))
+        }
     });
 
 
     //Listen for chat message
     socket.on('chatMessage', msg =>{
+        const user = getCurrentUser(socket.id);
         //Shown to everyone including the user
-        io.emit('message', formatMessage('USER',msg))
+        io.to(user.room).emit('message', formatMessage(user.username,msg))
     });
 });
 
