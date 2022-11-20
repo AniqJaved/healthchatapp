@@ -26,7 +26,19 @@ io.on('connection', socket => {
         socket.emit('message',formatMessage(yourBud, 'Welcome\'s you to ChatCord! 🙌'));
     
         //Shown to everyone except the user itself, Runs when user connects
-        socket.broadcast.to(user.room).emit('message',formatMessage(yourBud, `${user.username} has joined the chat 👋`));
+        socket.broadcast
+        .to(user.room)
+        .emit(
+            'message',
+            formatMessage(yourBud, `${user.username} has joined the chat 👋`)
+        );
+
+        //Send users and room info
+        io.to(user.room).emit('roomUsers',{
+            room: user.room,
+            users: getRoomUsers(user.room)
+        });
+
     });
     
     //Runs when user disconnects
@@ -35,7 +47,19 @@ io.on('connection', socket => {
 
         if(user){
             //Shown to everyone including the user
-            io.to(user.room).emit('message', formatMessage(yourBud, `${user.username} has left the chat ❤️`))
+            io
+            .to(user.room)
+            .emit(
+                'message', 
+                formatMessage(yourBud, `${user.username} has left the chat ❤️`)
+            );
+
+            //Send users and room info
+            io.to(user.room).emit('roomUsers',{
+                room: user.room,
+                users: getRoomUsers(user.room)
+            });
+
         }
     });
 
